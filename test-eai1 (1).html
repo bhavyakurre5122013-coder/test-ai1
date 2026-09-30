@@ -199,8 +199,8 @@ textarea{width:100%;height:58px;resize:none;border:0;outline:0;background:transp
   }
 
   async function requestJSON(url, init={}) {
-    const options = {mode:"cors", cache:"no-store", ...init};
-    if ("targetAddressSpace" in Request.prototype) options.targetAddressSpace = "loopback";
+    const options = {mode:"cors", cache:"no-store", targetAddressSpace:"loopback", ...init};
+    options.targetAddressSpace = "loopback";
     const response = await fetch(url, options);
     const body = await response.text();
     if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText + (body ? " — " + body.slice(0,200) : ""));
