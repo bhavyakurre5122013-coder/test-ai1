@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>everyAI — Local AI Test</title>
+<style>
+:root{--a:#6d4aff;--bg:#f7f7f9;--panel:#fff;--text:#18181c;--muted:#70707a;--border:#dedee5;--user:#eeeaff;--ok:#16834a;--bad:#b42318}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+.app{height:100%;display:grid;grid-template-columns:245px minmax(0,1fr)}
+.sidebar{background:#fbfbfd;border-right:1px solid var(--border);display:flex;flex-direction:column}
+.brand{height:64px;padding:0 15px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+.logo{width:32px;height:32px;border-radius:9px;background:var(--a);color:#fff;display:grid;place-items:center;font-weight:900}
+.brand b{font-size:14px}.brand small{display:block;color:var(--muted);font-size:10px;margin-top:2px}
+.new-chat{margin:14px;height:39px;background:#fff;border:1px solid var(--border);border-radius:9px;font-weight:800}
+.section{padding:2px 15px 8px;color:var(--muted);font-size:10px;font-weight:900;letter-spacing:.06em}
+.chat-list{padding:0 8px;overflow:auto}
+.chat{width:100%;background:transparent;border:0;border-radius:8px;text-align:left;padding:9px 10px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat.active{background:#eeeafd;color:#5038cf;font-weight:800}
+.side-status{margin-top:auto;padding:12px;border-top:1px solid var(--border);color:var(--muted);font-size:10px}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;background:#aaa;margin-right:6px}.dot.ok{background:var(--ok)}.dot.bad{background:var(--bad)}
+.main{display:grid;grid-template-rows:62px auto 1fr 126px;min-width:0}
+.topbar{background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 17px}
+.title{font-weight:850;font-size:14px;display:flex;align-items:center;gap:8px}
+.pill{border:1px solid var(--border);border-radius:999px;color:var(--muted);font-size:10px;font-weight:800;padding:5px 8px}.pill.ok{color:var(--ok);border-color:#b9dec8;background:#f1fbf5}.pill.bad{color:var(--bad);border-color:#ecc0bc;background:#fff3f1}
+.connect{border:0;border-radius:9px;background:var(--a);color:#fff;padding:9px 13px;font-weight:850}
+.control-wrap{padding:12px 15px 0}
+.control{background:#fff;border:1px solid var(--border);border-radius:13px;padding:12px;display:grid;grid-template-columns:40px 1fr;gap:10px}
+.icon{width:40px;height:40px;border-radius:10px;background:var(--user);display:grid;place-items:center;color:#5238d3;font-weight:900}
+.model-name{font-size:12px;font-weight:850}.meta{font-size:10px;color:var(--muted);margin-top:3px}
+select{width:min(500px,100%);margin-top:9px;padding:9px;border:1px solid var(--border);border-radius:8px;background:#fff}
+.notice{margin-top:7px;padding:8px 10px;border-radius:8px;background:#f0f0f3;color:var(--muted);font-size:10px;line-height:1.45}.notice.ok{background:#effaf4;color:var(--ok)}.notice.bad{background:#fff3f1;color:var(--bad)}
+.messages{overflow:auto;padding:20px 17px;display:flex;flex-direction:column;gap:12px}
+.empty{margin:auto;text-align:center;color:var(--muted);font-size:12px;max-width:460px}
+.message{max-width:min(820px,82%);background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:12px;line-height:1.5;white-space:pre-wrap}
+.message.user{margin-left:auto;background:var(--user);border-color:#ddd6ff}
+.head{font-size:9px;font-weight:900;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px}
+.composer-wrap{padding:11px 17px 17px}
+.composer{max-width:980px;margin:auto;background:#fff;border:1px solid var(--border);border-radius:14px;padding:9px 10px}
+textarea{width:100%;height:58px;resize:none;border:0;outline:0;background:transparent;padding:4px}
+.footer{display:flex;justify-content:space-between;align-items:center}.local{font-size:9px;color:var(--ok);font-weight:900;letter-spacing:.05em}
+.send{width:33px;height:33px;border:0;border-radius:9px;background:var(--a);color:#fff;font-weight:900}.send:disabled{opacity:.45}
+.modal-backdrop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:#0008;padding:18px}.modal-backdrop.open{display:flex}
+.modal{width:min(520px,100%);background:#fff;border:1px solid var(--border);border-radius:15px;padding:18px;box-shadow:0 24px 80px #0003}
+.modal h2{margin:0 0 6px;font-size:16px}.modal p{margin:0 0 12px;color:var(--muted);font-size:11px;line-height:1.5}
+.endpoint{display:flex;gap:7px}.endpoint input{flex:1;min-width:0;border:1px solid var(--border);border-radius:8px;padding:9px;outline:0}.endpoint button{border:0;border-radius:8px;background:var(--a);color:#fff;padding:0 13px;font-weight:800}
+.diag{margin-top:10px;background:#f5f5f7;border-radius:8px;padding:9px;font:10px/1.45 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;color:#565660}
+.close{margin-top:12px;width:100%;border:1px solid var(--border);background:#fff;border-radius:8px;padding:8px;font-weight:700}
+@media(max-width:760px){.app{grid-template-columns:1fr}.sidebar{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><div class="logo">e</div><div><b>everyAI</b><small>Local AI test</small></div></div>
+    <button class="new-chat" id="newChat">+ New chat</button>
+    <div class="section">CHATS</div>
+    <div class="chat-list" id="chatList"></div>
+    <div class="side-status"><span class="dot" id="statusDot"></span><span id="sideStatus">Not connected</span></div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="title">Local AI <span class="pill" id="statusPill">Not connected</span></div>
+      <button class="connect" id="connect">Connect localhost</button>
+    </header>
+
+    <section class="control-wrap">
+      <div class="control">
+        <div class="icon">AI</div>
+        <div>
+          <div class="model-name" id="modelName">No local model selected</div>
+          <div class="meta">The model stays in your local AI runtime. everyAI only sends requests to localhost.</div>
+          <select id="modelSelect" disabled><option>Connect localhost to discover models</option></select>
+        </div>
+      </div>
+      <div class="notice" id="notice">Use Connect localhost to read models from the local AI runtime.</div>
+    </section>
+
+    <section class="messages" id="messages">
+      <div class="empty">Connect localhost, select a model, and send a message.</div>
+    </section>
+
+    <section class="composer-wrap">
+      <div class="composer">
+        <textarea id="input" placeholder="Message your local model..." disabled></textarea>
+        <div class="footer"><span class="local">LOCAL ONLY</span><button class="send" id="send" disabled>↑</button></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <h2>Connect localhost</h2>
+    <p>everyAI connects directly from the browser to the AI runtime running on this computer. Default: Ollama at localhost:11434.</p>
+    <div class="endpoint"><input id="endpoint" value="http://localhost:11434"><button id="connectNow">Connect</button></div>
+    <div class="diag" id="diag">Ready.</div>
+    <button class="close" id="close">Close</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const S = {
+    endpoint: localStorage.getItem("everyAI.endpoint") || "http://localhost:11434",
+    type: null,
+    models: [],
+    model: null,
+    chats: JSON.parse(localStorage.getItem("everyAI.chats") || "[]"),
+    active: null
+  };
+
+  const ui = {
+    chats: $("chatList"), side: $("sideStatus"), dot: $("statusDot"),
+    pill: $("statusPill"), connect: $("connect"), modelName: $("modelName"),
+    modelSelect: $("modelSelect"), notice: $("notice"), messages: $("messages"),
+    input: $("input"), send: $("send"), newChat: $("newChat"),
+    modal: $("modal"), endpoint: $("endpoint"), connectNow: $("connectNow"),
+    diag: $("diag"), close: $("close")
+  };
+
+  function status(kind, text) {
+    ui.pill.textContent = text;
+    ui.pill.className = "pill " + (kind || "");
+    ui.side.textContent = text;
+    ui.dot.className = "dot " + (kind || "");
+  }
+
+  function notice(text, kind="") {
+    ui.notice.textContent = text;
+    ui.notice.className = "notice " + kind;
+  }
+
+  function save() {
+    localStorage.setItem("everyAI.chats", JSON.stringify(S.chats));
+  }
+
+  function makeChat() {
+    const c = {id: crypto.randomUUID(), title:"New chat", messages:[]};
+    S.chats.unshift(c);
+    S.active = c.id;
+    save();
+    renderChats();
+    renderMessages();
+    return c;
+  }
+
+  function getChat() {
+    return S.chats.find(c => c.id === S.active) || makeChat();
+  }
+
+  function renderChats() {
+    ui.chats.innerHTML = "";
+    if (!S.chats.length) makeChat();
+    for (const c of S.chats) {
+      const b = document.createElement("button");
+      b.className = "chat" + (c.id === S.active ? " active" : "");
+      b.textContent = c.title;
+      b.onclick = () => { S.active = c.id; renderChats(); renderMessages(); };
+      ui.chats.appendChild(b);
+    }
+  }
+
+  function renderMessages() {
+    const c = getChat();
+    ui.messages.innerHTML = "";
+    if (!c.messages.length) {
+      const e = document.createElement("div");
+      e.className = "empty";
+      e.textContent = "Connect localhost, select a model, and send a message.";
+      ui.messages.appendChild(e);
+      return;
+    }
+    for (const m of c.messages) {
+      const box = document.createElement("div");
+      box.className = "message " + m.role;
+      const h = document.createElement("div");
+      h.className = "head";
+      h.textContent = m.role === "user" ? "You" : "Local AI";
+      const t = document.createElement("div");
+      t.textContent = m.content;
+      box.append(h,t);
+      ui.messages.appendChild(box);
+    }
+    ui.messages.scrollTop = ui.messages.scrollHeight;
+  }
+
+  function addMessage(role, content) {
+    const c = getChat();
+    c.messages.push({role, content});
+    if (role === "user" && c.title === "New chat") c.title = content.trim().slice(0, 34) || "New chat";
+    save();
+    renderChats();
+    renderMessages();
+  }
+
+  async function requestJSON(url, init={}) {
+    const options = {mode:"cors", cache:"no-store", ...init};
+    if ("targetAddressSpace" in Request.prototype) options.targetAddressSpace = "loopback";
+    const response = await fetch(url, options);
+    const body = await response.text();
+    if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText + (body ? " — " + body.slice(0,200) : ""));
+    try { return JSON.parse(body); }
+    catch { throw new Error("The local endpoint returned a non-JSON response."); }
+  }
+
+  async function connectRuntime() {
+    const endpoint = ui.endpoint.value.trim().replace(/\/+$/,"");
+    if (!/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(endpoint)) {
+      ui.diag.textContent = "Use a localhost or 127.0.0.1 endpoint.";
+      return;
+    }
+
+    if (location.protocol === "file:") {
+      ui.diag.textContent =
+        "This file is being opened with file://.\n\n" +
+        "Chrome's current Local Network Access permission flow is designed for secure web contexts. " +
+        "A file:// copy cannot reliably reproduce the deployed everyAI → localhost test.\n\n" +
+        "Deploy this exact single HTML file on an HTTPS everyAI website, then click Connect localhost there.";
+      status("bad","Use HTTPS website");
+      notice("This single HTML file must be served as a secure website to test browser → localhost access in Chrome.","bad");
+      return;
+    }
+
+    status("", "Connecting…");
+    ui.diag.textContent = "Requesting browser localhost access and reading installed models…";
+
+    try {
+      const tags = await requestJSON(endpoint + "/api/tags");
+      S.endpoint = endpoint;
+      S.type = "ollama";
+      S.models = Array.isArray(tags.models) ? tags.models.map(m => ({
+        id:m.name, name:m.name,
+        meta:m.details?.family || "Ollama"
+      })) : [];
+      finishConnection();
+      return;
+    } catch (ollamaError) {
+      try {
+        const models = await requestJSON(endpoint + "/v1/models");
+        S.endpoint = endpoint;
+        S.type = "openai";
+        S.models = Array.isArray(models.data) ? models.data.map(m => ({
+          id:m.id, name:m.id, meta:"OpenAI-compatible"
+        })) : [];
+        finishConnection();
+        return;
+      } catch (openaiError) {
+        ui.diag.textContent =
+          "Connection failed.\n\n" +
+          "Endpoint: " + endpoint + "\n" +
+          "Ollama /api/tags: " + ollamaError.message + "\n" +
+          "OpenAI /v1/models: " + openaiError.message + "\n" +
+          "Page origin: " + location.origin;
+        status("bad","Connection failed");
+        notice("The browser could not read the localhost model list. See the connection diagnostics.","bad");
+      }
+    }
+  }
+
+  function finishConnection() {
+    localStorage.setItem("everyAI.endpoint", S.endpoint);
+    ui.modelSelect.innerHTML = "";
+    for (const m of S.models) {
+      const option = document.createElement("option");
+      option.value = m.id;
+      option.textContent = m.name;
+      ui.modelSelect.appendChild(option);
+    }
+    S.model = S.models[0] || null;
+    ui.modelSelect.disabled = !S.model;
+    ui.input.disabled = !S.model;
+    ui.send.disabled = !S.model;
+    ui.modelName.textContent = S.model ? S.model.name : "No models returned";
+    status(S.model ? "ok" : "bad", S.model ? "Local AI connected" : "No local models");
+    notice(
+      S.model
+        ? "Connected to " + S.endpoint + ". " + S.models.length + " local model" + (S.models.length === 1 ? "" : "s") + " available."
+        : "The runtime responded but returned no models.",
+      S.model ? "ok" : "bad"
+    );
+    ui.diag.textContent = "Connected.\nEndpoint: " + S.endpoint + "\nModels: " + S.models.length;
+    renderChats();
+    renderMessages();
+  }
+
+  async function stream(url, payload, onPiece) {
+    const options = {
+      method:"POST",
+      mode:"cors",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(payload)
+    };
+    if ("targetAddressSpace" in Request.prototype) options.targetAddressSpace = "loopback";
+
+    const response = await fetch(url, options);
+    if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let full = "";
+
+    while (true) {
+      const {value, done} = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, {stream:true});
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+
+        if (S.type === "ollama") {
+          const obj = JSON.parse(line);
+          const piece = obj?.message?.content || "";
+          if (piece) { full += piece; onPiece(full); }
+        } else {
+          const raw = line.startsWith("data:") ? line.slice(5).trim() : "";
+          if (!raw || raw === "[DONE]") continue;
+          const obj = JSON.parse(raw);
+          const piece = obj?.choices?.[0]?.delta?.content || "";
+          if (piece) { full += piece; onPiece(full); }
+        }
+      }
+    }
+    return full;
+  }
+
+  async function send() {
+    const text = ui.input.value.trim();
+    if (!text || !S.model) return;
+
+    ui.input.value = "";
+    const c = getChat();
+    addMessage("user", text);
+
+    ui.input.disabled = true;
+    ui.send.disabled = true;
+
+    let live = null;
+
+    try {
+      const createLive = () => {
+        if (live) return live;
+        const box = document.createElement("div");
+        box.className = "message";
+        const h = document.createElement("div");
+        h.className = "head";
+        h.textContent = "Local AI";
+        const t = document.createElement("div");
+        box.append(h,t);
+        ui.messages.appendChild(box);
+        live = {box,textNode:t};
+        return live;
+      };
+
+      let full = "";
+      if (S.type === "ollama") {
+        full = await stream(
+          S.endpoint + "/api/chat",
+          {model:S.model.id, messages:c.messages.map(m => ({role:m.role,content:m.content})), stream:true},
+          value => { const l=createLive(); l.textNode.textContent=value; ui.messages.scrollTop=ui.messages.scrollHeight; }
+        );
+      } else {
+        full = await stream(
+          S.endpoint + "/v1/chat/completions",
+          {model:S.model.id, messages:c.messages.map(m => ({role:m.role,content:m.content})), stream:true},
+          value => { const l=createLive(); l.textNode.textContent=value; ui.messages.scrollTop=ui.messages.scrollHeight; }
+        );
+      }
+
+      addMessage("assistant", full || "(No text returned)");
+    } catch (error) {
+      addMessage("assistant", "Local AI error: " + error.message);
+      notice("Local generation failed: " + error.message, "bad");
+    } finally {
+      ui.input.disabled = !S.model;
+      ui.send.disabled = !S.model;
+    }
+  }
+
+  ui.connect.onclick = () => {
+    ui.endpoint.value = S.endpoint;
+    ui.modal.classList.add("open");
+    ui.diag.textContent = location.protocol === "file:"
+      ? "This copy is opened as file://. Use the same single file as the HTTPS everyAI website to test browser → localhost."
+      : "Ready.";
+  };
+
+  ui.connectNow.onclick = async () => {
+    await connectRuntime();
+    if (location.protocol !== "file:" && status.textContent !== "Connection failed") {}
+  };
+
+  ui.close.onclick = () => ui.modal.classList.remove("open");
+  ui.newChat.onclick = () => { S.active = null; makeChat(); };
+  ui.modelSelect.onchange = () => {
+    S.model = S.models.find(m => m.id === ui.modelSelect.value) || null;
+    ui.modelName.textContent = S.model ? S.model.name : "No local model selected";
+    ui.input.disabled = !S.model;
+    ui.send.disabled = !S.model;
+  };
+  ui.send.onclick = send;
+  ui.input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
+  });
+
+  if (S.chats.length) S.active = S.chats[0].id;
+  else makeChat();
+  renderChats();
+  renderMessages();
+})();
+</script>
+</body>
+</html>
